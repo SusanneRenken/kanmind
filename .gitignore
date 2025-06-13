@@ -1,9 +1,11 @@
 # Virtualenv
 env/
+
 # Bytecode und DB
 __pycache__/
 *.pyc
 db.sqlite3
+
 # IDE-Einstellungen
 .vscode/
 .env
