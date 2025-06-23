@@ -5,12 +5,12 @@ from django.contrib.auth.models import User
 
 class Board(models.Model):
     title = models.CharField(max_length=100)
-    members = models.ManyToManyField('auth.User', related_name='boards')
+    members = models.ManyToManyField(User, related_name='boards')
     member_count = models.PositiveIntegerField(default=0)
     ticket_count = models.PositiveIntegerField(default=0)
     tasks_high_prio_count = models.PositiveIntegerField(default=0)
     owner_id = models.ForeignKey(
-        'auth.User', on_delete=models.CASCADE, related_name='owned_boards'
+        User, on_delete=models.CASCADE, related_name='owned_boards'
     )
 
     def __str__(self):
@@ -23,10 +23,10 @@ class Task(models.Model):
     due_date = models.DateField(blank=True, null=True)
 
     assignee_id = models.ForeignKey(
-        'auth.User', on_delete=models.CASCADE, related_name='tasks'
+        User, on_delete=models.CASCADE, related_name='tasks'
     )
     reviewer_id = models.ForeignKey(
-        'auth.User', on_delete=models.CASCADE, related_name='review_tasks', null=True, blank=True
+        User, on_delete=models.CASCADE, related_name='review_tasks', null=True, blank=True
     )
 
     status = models.CharField(max_length=20, choices=[
@@ -47,7 +47,7 @@ class Task(models.Model):
     
 class Comment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
-    author = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
