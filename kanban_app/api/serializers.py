@@ -21,6 +21,22 @@ class BoardSerializer(serializers.ModelSerializer):
         return Task.objects.filter(board=obj, priority='high').count()
         
 
+class TaskOnBoardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'description', 'status', 'priority']
+        read_only_fields = ['id']
+
+
+class BoardDetailSerializer(BoardSerializer):
+    tasks = TaskOnBoardSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Board
+        fields = ['id', 'title', 'tasks']
+        read_only_fields = ['id']
+
 
 class TaskSerializer(serializers.ModelSerializer):
     board = serializers.PrimaryKeyRelatedField(
@@ -30,10 +46,7 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['id', 'board', 'title', 'description', 'status', 'priority']
-        read_only_fields = ['id', 'board']
-
-
-   
+        read_only_fields = ['id', 'board'] 
 
 
 class CommentSerializer(serializers.Serializer):

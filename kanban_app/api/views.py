@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from kanban_app.models import Board, Task, Comment
-from .serializers import BoardSerializer, TaskSerializer, CommentSerializer
+from .serializers import BoardSerializer, BoardDetailSerializer, TaskSerializer, CommentSerializer
 
 
 @api_view(['GET', 'POST'])
@@ -20,14 +20,14 @@ def board_list(request):
         else:
             return Response(serializer.errors, status=400)
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PATCH', 'DELETE'])
 def board_detail(request, pk):
     if request.method == 'GET':
         board = Board.objects.get(pk=pk)
-        serializer = BoardSerializer(board)
+        serializer = BoardDetailSerializer(board)
         return Response(serializer.data, status=200)
     
-    if request.method == 'PUT':
+    if request.method == 'PATCH':
         board = Board.objects.get(pk=pk)
         serializer = BoardSerializer(board, data=request.data, partial=True)
         if serializer.is_valid():
@@ -58,14 +58,14 @@ def task_list(request):
         else:
             return Response(serializer.errors, status=400)
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PATCH', 'DELETE'])
 def task_detail(request, pk):
     if request.method == 'GET':
         task = Task.objects.get(pk=pk)
         serializer = TaskSerializer(task)
         return Response(serializer.data, status=200)
     
-    if request.method == 'PUT':
+    if request.method == 'PATCH':
         task = Task.objects.get(pk=pk)
         serializer = TaskSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
