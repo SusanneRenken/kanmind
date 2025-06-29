@@ -1,33 +1,40 @@
 from rest_framework import serializers
 from kanban_app.models import Board, Task, Comment
 
-class BoardSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    title = serializers.CharField(max_length=100)
+class BoardSerializer(serializers.ModelSerializer):
+    ticket_count = serializers.SerializerMethodField()
+    tasks_to_do_count = serializers.SerializerMethodField()
+    tasks_high_prio_count = serializers.SerializerMethodField()
 
-    def create(self, validated_data):
-        return Board.objects.create(**validated_data)
+    class Meta:
+        model = Board
+        fields = ['id', 'title', 'ticket_count', 'tasks_to_do_count', 'tasks_high_prio_count']
+        read_only_fields = ['id', 'ticket_count', 'tasks_to_do_count', 'tasks_high_prio_count']
+
+    def get_ticket_count(self, obj):
+        return Task.objects.filter(board=obj).count()
     
-    def update(self, instance, validated_data):
-        instance.title = validated_data.get('title', instance.title)
-        instance.save()
-        return instance
+    def get_tasks_to_do_count(self, obj):
+        return Task.objects.filter(board=obj, status='todo').count()
     
+    def get_tasks_high_prio_count(self, obj):
+        return Task.objects.filter(board=obj, priority='high').count()
+        
 
 
-class TaskSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    title = serializers.CharField(max_length=100)
-    description = serializers.CharField()
+class TaskSerializer(serializers.ModelSerializer):
+    board = serializers.PrimaryKeyRelatedField(
+        queryset=Board.objects.all()
+    )
 
-    def create(self, validated_data):
-        return Task.objects.create(**validated_data)
-    
-    def update(self, instance, validated_data):
-        instance.title = validated_data.get('title', instance.title)
-        instance.description = validated_data.get('description', instance.description)
-        instance.save()
-        return instance
+    class Meta:
+        model = Task
+        fields = ['id', 'board', 'title', 'description', 'status', 'priority']
+        read_only_fields = ['id', 'board']
+
+
+   
+
 
 class CommentSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)

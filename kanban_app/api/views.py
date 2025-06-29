@@ -76,9 +76,8 @@ def task_detail(request, pk):
     
     if request.method == 'DELETE':
         task = Task.objects.get(pk=pk)
-        serializer = TaskSerializer(task)
         task.delete()
-        return Response(serializer.data, status=204)
+        return Response(status=204)
     
 
 # class BoardList(generics.ListCreateAPIView):
