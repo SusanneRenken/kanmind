@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
-from .serializers import RegistrationSerializer
+from .serializers import RegistrationSerializer, EmailAuthTokenSerializer
 
 
 class RegistrationView(APIView):
@@ -29,21 +29,21 @@ class RegistrationView(APIView):
 
 class CustomLoginView(ObtainAuthToken):
     permission_classes = [AllowAny]
+    serializer_class   = EmailAuthTokenSerializer
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
 
-        data = {}
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            token, created = Token.objects.get_or_create(user=user)
-            data = {
-                'token': token.key,
-                'fullname': user.get_full_name(),
-                'email': user.email,
-                'user_id': user.id
-            }
-        else:
-            data = serializer.errors
-        
-        return Response(data)
+        user = serializer.validated_data['user']
+        token, _ = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'token':    token.key,
+            'fullname': user.get_full_name() or user.username,
+            'email':    user.email,
+            'user_id':  user.id
+        })

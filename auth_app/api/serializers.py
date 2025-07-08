@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
 
 class RegistrationSerializer(serializers.ModelSerializer):
 
@@ -37,3 +38,31 @@ class RegistrationSerializer(serializers.ModelSerializer):
         account.set_password(pw)
         account.save()
         return account
+    
+class EmailAuthTokenSerializer(serializers.Serializer):
+    email = serializers.EmailField(label="Email")
+    password = serializers.CharField(
+        label="Password",
+        style={'input_type': 'password'},
+        trim_whitespace=False
+    )
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            user = authenticate(username=email, password=password)
+            if user is None:
+                raise serializers.ValidationError(
+                    "Ungültige Anmeldedaten.",
+                    code='authorization'
+                )
+        else:
+            raise serializers.ValidationError(
+                'Beide Felder "email" und "password" sind erforderlich.',
+                code='authorization'
+            )
+
+        attrs['user'] = user
+        return attrs
