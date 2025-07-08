@@ -1,90 +1,33 @@
-from rest_framework import generics
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from django.shortcuts import get_list_or_404, get_object_or_404
+from rest_framework import generics, viewsets
 from kanban_app.models import Board, Task, Comment
-from .serializers import BoardSerializer, BoardDetailSerializer, TaskSerializer, CommentSerializer
+from .serializers import BoardSerializer, BoardDetailSerializer, BoardPartialUpdateSerializer, TaskSerializer, TaskPartialUpdateSerializer, CommentSerializer
 
+class BoardViewSet(viewsets.ModelViewSet):
+    queryset = Board.objects.all()
+    serializer_class = BoardSerializer
 
-@api_view(['GET', 'POST'])
-def board_list(request):
-    if request.method == 'GET':
-        boards = Board.objects.all()
-        serializer = BoardSerializer(boards, many=True)
-        return Response(serializer.data, status=200)
+    detail_serializer_class = BoardDetailSerializer
+    patch_serializer_class = BoardPartialUpdateSerializer
 
-    if request.method == 'POST':
-        serializer = BoardSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return self.detail_serializer_class
+        if self.action == 'partial_update':
+            return self.patch_serializer_class
+        return super().get_serializer_class() 
 
-@api_view(['GET', 'PATCH', 'DELETE'])
-def board_detail(request, pk):
-    if request.method == 'GET':
-        board = Board.objects.get(pk=pk)
-        serializer = BoardDetailSerializer(board)
-        return Response(serializer.data, status=200)
-    
-    if request.method == 'PATCH':
-        board = Board.objects.get(pk=pk)
-        serializer = BoardSerializer(board, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)
-    
-    if request.method == 'DELETE':
-        board = Board.objects.get(pk=pk)
-        serializer = BoardSerializer(board)
-        board.delete()
-        return Response(serializer.data, status=204)
+class TaskViewSet(viewsets.ModelViewSet):    
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer   
 
+    partial_update_serializer_class = TaskPartialUpdateSerializer
 
-@api_view(['GET', 'POST'])
-def task_list(request):
-    if request.method == 'GET':
-        tasks = Task.objects.all()
-        serializer = TaskSerializer(tasks, many=True)
-        return Response(serializer.data, status=200)
+    def get_serializer_class(self):
+        if self.action == 'partial_update':
+            return self.partial_update_serializer_class
+        return super().get_serializer_class()
 
-    if request.method == 'POST':
-        serializer = TaskSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)
-
-@api_view(['GET', 'PATCH', 'DELETE'])
-def task_detail(request, pk):
-    if request.method == 'GET':
-        task = Task.objects.get(pk=pk)
-        serializer = TaskSerializer(task)
-        return Response(serializer.data, status=200)
-    
-    if request.method == 'PATCH':
-        task = Task.objects.get(pk=pk)
-        serializer = TaskSerializer(task, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)
-    
-    if request.method == 'DELETE':
-        task = Task.objects.get(pk=pk)
-        task.delete()
-        return Response(status=204)
-    
-
-# class BoardList(generics.ListCreateAPIView):
-#     pass
-
-# class BoardDetail(generics.RetrieveUpdateDestroyAPIView):
-#     pass
 
 class AssignedTaskList(generics.ListCreateAPIView):
     pass
@@ -92,14 +35,18 @@ class AssignedTaskList(generics.ListCreateAPIView):
 class ReviewingTaskList(generics.ListCreateAPIView):
     pass
 
-# class TaskList(generics.ListCreateAPIView):
-#     pass
 
-# class TaskDetail(generics.RetrieveUpdateDestroyAPIView):
-#     pass
 
-class CommentsList(generics.ListCreateAPIView):
-    pass
 
-class CommentsDetail(generics.RetrieveUpdateDestroyAPIView):
-    pass
+class CommentsViewSet(viewsets.ModelViewSet):  
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer 
+
+    def get_queryset(self):
+        task = get_object_or_404(Task, pk=self.kwargs['task_pk'])
+        return Comment.objects.filter(task=task)
+
+    def perform_create(self, serializer):
+        task = get_object_or_404(Task, pk=self.kwargs['task_pk'])
+        # serializer.save(task=task, author=self.request.user) 
+        serializer.save(task=task)
