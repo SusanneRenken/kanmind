@@ -10,7 +10,7 @@ router.register(r'tasks', TaskViewSet)
 tasks_router = nested_routers.NestedSimpleRouter(router, r'tasks', lookup='task')
 tasks_router.register(r'comments', CommentsViewSet, basename='task-comments')
 
-urlpatterns = [    
+urlpatterns = [
     path('tasks/assigned-to-me/', AssignedTaskList.as_view(), name='assigned-tasks'),
     path('tasks/reviewing/', ReviewingTaskList.as_view(), name='reviewing-tasks'),
 

@@ -3,6 +3,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from .serializers import RegistrationSerializer, EmailAuthTokenSerializer
 
 
@@ -46,4 +48,19 @@ class CustomLoginView(ObtainAuthToken):
             'fullname': user.get_full_name() or user.username,
             'email':    user.email,
             'user_id':  user.id
+        })
+    
+class EmailCheckView(APIView):
+    def get(self, request):
+        email = request.query_params.get('email')
+        if not email:
+            return Response(
+                {'detail': 'Query‑Param “email” is required.'}
+            )
+
+        user = get_object_or_404(User, email=email)
+        return Response({
+            'id':       user.id,
+            'email':    user.email,
+            'fullname': user.get_full_name() or user.username
         })
