@@ -1,14 +1,23 @@
-from django.shortcuts import get_list_or_404, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets
+from rest_framework.permissions import IsAuthenticated
 from kanban_app.models import Board, Task, Comment
 from .serializers import BoardSerializer, BoardDetailSerializer, BoardPartialUpdateSerializer, TaskSerializer, TaskPartialUpdateSerializer, CommentSerializer
+from .permissions import IsOwnerOrMember
 
 class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrMember]
 
     detail_serializer_class = BoardDetailSerializer
     partial_update_serializer_class = BoardPartialUpdateSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        qs_owner  = Board.objects.filter(owner_id=user)
+        qs_member = Board.objects.filter(members=user)
+        return (qs_owner | qs_member).distinct()
 
     def get_serializer_class(self):
         if self.action == 'retrieve':

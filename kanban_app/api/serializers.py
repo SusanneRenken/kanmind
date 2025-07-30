@@ -17,11 +17,13 @@ class UserNestedSerializer(serializers.ModelSerializer):
 
 class TaskNestedSerializer(serializers.ModelSerializer):
     comments_count = serializers.SerializerMethodField()
+    assignee = UserNestedSerializer(read_only=True)
+    reviewer = UserNestedSerializer(read_only=True)
 
     class Meta:
         model = Task
         fields = ['id', 'title', 'description', 'status',
-                  'priority', 'due_date', 'comments_count']
+                  'priority', 'assignee', 'reviewer', 'due_date', 'comments_count']
         read_only_fields = ['id']
 
     def get_comments_count(self, obj):
