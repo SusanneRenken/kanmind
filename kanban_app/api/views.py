@@ -8,16 +8,21 @@ class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardSerializer
 
     detail_serializer_class = BoardDetailSerializer
-    patch_serializer_class = BoardPartialUpdateSerializer
+    partial_update_serializer_class = BoardPartialUpdateSerializer
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return self.detail_serializer_class
         if self.action == 'partial_update':
-            return self.patch_serializer_class
+            return self.partial_update_serializer_class
         return super().get_serializer_class() 
+    
+    def perform_create(self, serializer):
+        board = serializer.save(owner_id=self.request.user)
+        member_ids = self.request.data.get('members', [])
+        board.members.set(member_ids)
 
-class TaskViewSet(viewsets.ModelViewSet):    
+class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer   
 
@@ -28,15 +33,17 @@ class TaskViewSet(viewsets.ModelViewSet):
             return self.partial_update_serializer_class
         return super().get_serializer_class()
 
+class AssignedTaskList(generics.ListAPIView):
+    serializer_class = TaskSerializer  
 
-class AssignedTaskList(generics.ListCreateAPIView):
-    pass
+    def get_queryset(self):
+        return Task.objects.filter(assignee=self.request.user)
 
-class ReviewingTaskList(generics.ListCreateAPIView):
-    pass
+class ReviewingTaskList(generics.ListAPIView):
+    serializer_class = TaskSerializer  
 
-
-
+    def get_queryset(self):
+        return Task.objects.filter(reviewer=self.request.user)
 
 class CommentsViewSet(viewsets.ModelViewSet):  
     queryset = Comment.objects.all()
@@ -48,5 +55,4 @@ class CommentsViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         task = get_object_or_404(Task, pk=self.kwargs['task_pk'])
-        # serializer.save(task=task, author=self.request.user) 
-        serializer.save(task=task)
+        serializer.save(task=task, author=self.request.user)

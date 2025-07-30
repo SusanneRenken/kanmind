@@ -19,11 +19,11 @@ class Task(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name='tasks')
     due_date = models.DateField(blank=True, null=True)
 
-    assignee_id = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True
+    assignee = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='tasks_assigned', null=True, blank=True
     )
-    reviewer_id = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='review_tasks', null=True, blank=True
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='tasks_reviewing', null=True, blank=True
     )
 
     status = models.CharField(max_length=20, choices=[
