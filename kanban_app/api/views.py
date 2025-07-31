@@ -3,12 +3,12 @@ from rest_framework import generics, viewsets
 from rest_framework.permissions import IsAuthenticated
 from kanban_app.models import Board, Task, Comment
 from .serializers import BoardSerializer, BoardDetailSerializer, BoardPartialUpdateSerializer, TaskSerializer, TaskPartialUpdateSerializer, CommentSerializer
-from .permissions import IsOwnerOrMember
+from .permissions import IsBoardOwnerOrMember
 
 class BoardViewSet(viewsets.ModelViewSet):
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrMember]
+    permission_classes = [IsAuthenticated, IsBoardOwnerOrMember]
 
     detail_serializer_class = BoardDetailSerializer
     partial_update_serializer_class = BoardPartialUpdateSerializer
