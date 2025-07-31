@@ -41,6 +41,9 @@ class TaskViewSet(viewsets.ModelViewSet):
         if self.action == 'partial_update':
             return self.partial_update_serializer_class
         return super().get_serializer_class()
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)       
 
 class AssignedTaskList(generics.ListAPIView):
     serializer_class = TaskSerializer  

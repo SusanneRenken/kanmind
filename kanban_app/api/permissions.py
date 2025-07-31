@@ -45,6 +45,9 @@ class IsTaskOwnerOrBoardMember(BasePermission):
             return True
 
         if request.method == 'DELETE':
-            return obj.board.members.filter(pk=user.pk).exists()
+            return (
+                request.user == obj.created_by or
+                obj.board.owner_id == request.user
+            )
 
         return False
