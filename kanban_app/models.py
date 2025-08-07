@@ -47,7 +47,6 @@ class Task(models.Model):
     def __str__(self):
         return f'Task "{self.title}" on Board "{self.board.title}"'
 
-
 class Comment(models.Model):
     task = models.ForeignKey(
         Task, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)

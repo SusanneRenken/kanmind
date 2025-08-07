@@ -54,7 +54,21 @@ class BoardSerializer(serializers.ModelSerializer):
 
     def get_tasks_high_prio_count(self, obj):
         return Task.objects.filter(board=obj, priority='high').count()
+    
+class BoardCreateSerializer(serializers.ModelSerializer):
+    members = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
 
+    class Meta:
+        model = Board
+        fields = ['id', 'title', 'members']
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        members = validated_data.pop('members', [])
+        owner = validated_data.pop('owner_id', None)
+        board = Board.objects.create(owner_id=owner, **validated_data)
+        board.members.set(members)
+        return board
 
 class BoardPartialUpdateSerializer(serializers.ModelSerializer):
     members = serializers.PrimaryKeyRelatedField(
@@ -95,7 +109,7 @@ class TaskSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    assignee = UserNestedSerializer()
+    assignee = UserNestedSerializer(read_only=True)
 
     reviewer_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
@@ -104,7 +118,7 @@ class TaskSerializer(serializers.ModelSerializer):
         allow_null=True,
         write_only=True
     )
-    reviewer = UserNestedSerializer()
+    reviewer = UserNestedSerializer(read_only=True)
     comments_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -115,13 +129,26 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_comments_count(self, obj):
         return obj.comments.count()
+    
+    def validate(self, attrs):
+        if self.instance and 'board' in self.initial_data:
+            incoming = attrs.get('board')
+            if incoming and incoming.pk != self.instance.board.pk:
+                raise serializers.ValidationError(
+                    {'board': 'Changing board is not allowed.'}
+                )
+        return attrs
 
 
 class TaskPartialUpdateSerializer(TaskSerializer):
     class Meta(TaskSerializer.Meta):
-        model = Task
-        fields = ['id', 'title', 'description',
-                  'status', 'priority', 'assignee_id', 'assignee', 'reviewer_id', 'reviewer', 'due_date']
+        fields = [
+            'id', 'title', 'description',
+            'status', 'priority',
+            'assignee_id', 'assignee',
+            'reviewer_id', 'reviewer',
+            'due_date'
+        ]
         read_only_fields = ['id']
 
 

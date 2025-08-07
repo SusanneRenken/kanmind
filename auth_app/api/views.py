@@ -1,8 +1,11 @@
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from .serializers import RegistrationSerializer, EmailAuthTokenSerializer
@@ -55,12 +58,19 @@ class EmailCheckView(APIView):
         email = request.query_params.get('email')
         if not email:
             return Response(
-                {'detail': 'Query‑Param “email” is required.'}
+                {'detail': 'Die E-Mail-Adresse fehlt.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {'detail': 'Ungültiges E-Mail-Format.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user = get_object_or_404(User, email=email)
         return Response({
             'id':       user.id,
             'email':    user.email,
             'fullname': user.get_full_name() or user.username
-        })
+        }, status=status.HTTP_200_OK)
