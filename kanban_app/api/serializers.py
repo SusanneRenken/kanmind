@@ -36,8 +36,7 @@ class TaskNestedSerializer(serializers.ModelSerializer):
 
     def get_comments_count(self, obj):
         """Return number of comments attached to this task."""
-        # Kept as in your original implementation for consistency.
-        return Comment.objects.filter(task=obj).count()
+        return obj.comments.count()
 
 
 class BoardSerializer(serializers.ModelSerializer):
@@ -54,10 +53,6 @@ class BoardSerializer(serializers.ModelSerializer):
         model = Board
         fields = [
             'id', 'title', 'member_count', 'ticket_count',
-            'tasks_to_do_count', 'tasks_high_prio_count', 'owner_id'
-        ]
-        read_only_fields = [
-            'id', 'member_count', 'ticket_count',
             'tasks_to_do_count', 'tasks_high_prio_count', 'owner_id'
         ]
 
@@ -94,7 +89,7 @@ class BoardCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def create(self, validated_data):
-        """Create board and assign provided members."""
+        """Create board and assign provided members (owner is set in the view)."""
         members = validated_data.pop('members', [])
         owner = validated_data.pop('owner_id', None)
         board = Board.objects.create(owner_id=owner, **validated_data)
@@ -119,6 +114,14 @@ class BoardPartialUpdateSerializer(serializers.ModelSerializer):
         model = Board
         fields = ['id', 'title', 'members', 'owner_data', 'members_data']
         read_only_fields = ['id', 'owner_data', 'members_data']
+
+    def update(self, instance, validated_data):
+        """Ensure write_only 'members' is applied via .set()."""
+        members = validated_data.pop('members', None)
+        instance = super().update(instance, validated_data)
+        if members is not None:
+            instance.members.set(members)
+        return instance
 
 
 class BoardDetailSerializer(BoardSerializer):
@@ -178,13 +181,21 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """
-        Prevent board changes on updates (PATCH/PUT).
-        Creation is allowed to set board; subsequent changes are blocked.
+        Prevent board changes on updates; ensure assignee/reviewer are members (or owner) of the board.
         """
         if self.instance and 'board' in self.initial_data:
             incoming = attrs.get('board')
             if incoming and incoming.pk != self.instance.board.pk:
                 raise serializers.ValidationError({'board': 'Changing board is not allowed.'})
+
+        board = attrs.get('board') or (self.instance.board if self.instance else None)
+
+        for field in ('assignee', 'reviewer'):
+            user = attrs.get(field)
+            if user and board:
+                is_member = board.members.filter(pk=user.pk).exists() or board.owner_id == user
+                if not is_member:
+                    raise serializers.ValidationError({f'{field}_id': 'User must be member or owner of the board.'})
         return attrs
 
 
@@ -218,5 +229,5 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
     def get_author(self, obj):
-        """Return the author's full name (fallback to username is handled in views if needed)."""
+        """Return the author's full name (fallback to username can be handled outside if needed)."""
         return obj.author.get_full_name()

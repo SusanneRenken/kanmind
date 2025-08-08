@@ -15,7 +15,8 @@ router.register(r'boards', BoardViewSet)
 router.register(r'tasks', TaskViewSet)
 
 # Nested router for task comments
-tasks_router = nested_routers.NestedSimpleRouter(router, r'tasks', lookup='task')
+tasks_router = nested_routers.NestedSimpleRouter(
+    router, r'tasks', lookup='task')
 tasks_router.register(r'comments', CommentsViewSet, basename='task-comments')
 
 urlpatterns = [

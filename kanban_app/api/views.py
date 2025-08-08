@@ -77,7 +77,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     """
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsTaskOwnerOrBoardMember]
+    permission_classes = [IsAuthenticated, IsTaskOwnerOrBoardMember]
     partial_update_serializer_class = TaskPartialUpdateSerializer
 
     def get_serializer_class(self):
@@ -121,7 +121,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
     """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [IsCommentOwnerOrBoardMember]
+    permission_classes = [IsAuthenticated, IsCommentOwnerOrBoardMember]
 
     def get_queryset(self):
         """

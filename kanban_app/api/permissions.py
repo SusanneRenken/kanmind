@@ -44,7 +44,8 @@ class IsTaskOwnerOrBoardMember(BasePermission):
     def has_object_permission(self, request, view, obj: Task):
         """Enforce member/owner for read/update, and creator/owner for delete. Validate assignee/reviewer membership."""
         user = request.user
-        is_member = obj.board.members.filter(pk=user.pk).exists() or obj.board.owner_id == user
+        is_member = obj.board.members.filter(
+            pk=user.pk).exists() or obj.board.owner_id == user
         if request.method in SAFE_METHODS or request.method in ('PUT', 'PATCH'):
             if not is_member:
                 return False

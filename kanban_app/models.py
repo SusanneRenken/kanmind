@@ -60,12 +60,12 @@ class Task(models.Model):
     status = models.CharField(
         max_length=20,
         choices=[
-            ('todo', 'To Do'),
-            ('in_progress', 'In Progress'),
+            ('to-do', 'To Do'),
+            ('in-progress', 'In Progress'),
             ('review', 'Review'),
             ('done', 'Done')
         ],
-        default='review'
+        default='to-do'
     )
 
     priority = models.CharField(
@@ -92,9 +92,7 @@ class Comment(models.Model):
     task = models.ForeignKey(
         Task,
         on_delete=models.CASCADE,
-        related_name='comments',
-        null=True,
-        blank=True
+        related_name='comments'
     )
     author = models.ForeignKey(
         User,
