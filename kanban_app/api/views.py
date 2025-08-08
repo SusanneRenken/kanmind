@@ -33,12 +33,13 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Returns boards where the current user is either owner or member.
+        Return boards where the current user is either owner or member.
+        Using OR + distinct() avoids backend-specific UNION quirks.
         """
         user = self.request.user
-        return Board.objects.filter(owner_id=user).union(
-            Board.objects.filter(members=user)
-        ).distinct()
+        qs_owner  = Board.objects.filter(owner_id=user)
+        qs_member = Board.objects.filter(members=user)
+        return (qs_owner | qs_member).distinct()
 
     def get_object(self):
         """
@@ -123,16 +124,22 @@ class CommentsViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated, IsCommentOwnerOrBoardMember]
 
+    def _get_task(self):
+        """
+        Resolve task from nested URL, or raise 404 early.
+        """
+        return get_object_or_404(Task, pk=self.kwargs['task_pk'])
+
     def get_queryset(self):
         """
-        Returns all comments for a given task.
+        Return all comments for the given task. Missing task → 404.
         """
-        task = get_object_or_404(Task, pk=self.kwargs['task_pk'])
+        task = self._get_task()
         return Comment.objects.filter(task=task)
 
     def perform_create(self, serializer):
         """
-        Creates a comment and associates it with the task and user.
+        Create a comment bound to the given task and current user.
         """
-        task = get_object_or_404(Task, pk=self.kwargs['task_pk'])
+        task = self._get_task()
         serializer.save(task=task, author=self.request.user)

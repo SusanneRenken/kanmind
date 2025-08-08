@@ -19,16 +19,15 @@ class RegistrationView(APIView):
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            saved_account = serializer.save()
-            token, _ = Token.objects.get_or_create(user=saved_account)
-            return Response({
-                'token': token.key,
-                'fullname': saved_account.get_full_name(),
-                'email': saved_account.email,
-                'user_id': saved_account.id
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'fullname': user.get_full_name(),
+            'email': user.email,
+            'user_id': user.id
+        }, status=status.HTTP_201_CREATED)
 
 
 class CustomLoginView(ObtainAuthToken):
